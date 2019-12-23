@@ -23,21 +23,36 @@ def main():
   top = tk.Tk()
   top.title(TITLE)
   canvas = tk.Canvas(top, bg = BG_COLOR, width = WIDTH, height = HEIGHT)
-  
+  canvas.pack()
   drawGridLines(canvas)
   matrix = createMatrix()
-  fillMatrixRandomly(matrix)
-  drawMatrix(canvas, matrix)
   
   repeatedlyUpdateRandomly(top, canvas, matrix, 500)
   
   # has to be the last thing in this function
-  canvas.pack()
+  center_window(top)
   top.mainloop()
 #
 
 
 ###### Helper Functions ######
+def center_window(top):
+  # https://stackoverflow.com/a/10018670
+  width_screen = top.winfo_screenwidth()
+  height_screen = top.winfo_screenheight()
+  top.geometry('{}x{}+{}+{}'.format(WIDTH, HEIGHT, (width_screen - WIDTH) // 2, (height_screen - HEIGHT) // 2))
+  top.wait_visibility()
+  width = top.winfo_width()
+  frm_width = top.winfo_rootx() - top.winfo_x()
+  win_width = width + 2 * frm_width
+  height = top.winfo_height()
+  titlebar_height = top.winfo_rooty() - top.winfo_y()
+  win_height = height + titlebar_height + frm_width
+  x = top.winfo_screenwidth() // 2 - win_width // 2
+  y = top.winfo_screenheight() // 2 - win_height // 2
+  top.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+#
+
 def drawGridLines(canvas):
   # see https://docs.python.org/3/library/stdtypes.html#range
   for x_col in range(0, WIDTH, CELL_SIZE):
@@ -68,7 +83,7 @@ def repeatedlyUpdateRandomly(top, canvas, matrix, intervalMs):
     drawMatrix(canvas, matrix)
     top.after(intervalMs, innerUpdate)
   #
-  top.after(intervalMs, innerUpdate)
+  innerUpdate()
 #
 
 def drawMatrix(canvas, matrix):
