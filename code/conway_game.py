@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 
-# see https://stackoverflow.com/questions/17843596/difference-between-tkinter-and-tkinter
-# and https://python-future.org/compatible_idioms.html#tkinter
+###### Imports ######
 import tkinter as tk
+
+
+###### Constants ######
+CELL_SIZE = 25
+WIDTH = 800
+HEIGHT = int(WIDTH * 9 / 16)
+COLS = int(WIDTH / CELL_SIZE)
+ROWS = int(HEIGHT / CELL_SIZE)
+BG_COLOR = 'blue'
+FG_LINE = 'white'
+
 
 ###### Main Method ######
 def main():
@@ -11,13 +21,20 @@ def main():
   
   # see https://www.tutorialspoint.com/python3/tk_canvas.htm
   top = tk.Tk()
-  canvas = tk.Canvas(top, bg = "blue", width = 800, height = 450)
-  arc = canvas.create_arc((10, 50, 240, 210), start = 0, extent = 150, fill = "red")
-  line = canvas.create_line(10, 10, 200, 200, fill = 'white')
+  canvas = tk.Canvas(top, bg = BG_COLOR, width = WIDTH, height = HEIGHT)
+  
+  # see https://docs.python.org/3/library/stdtypes.html#range
+  for x_col in range(0, WIDTH, CELL_SIZE):
+    canvas.create_line(x_col, 0, x_col, HEIGHT, fill = FG_LINE)
+  #
+  for y_row in range(0, HEIGHT, CELL_SIZE):
+    canvas.create_line(0, y_row, WIDTH, y_row, fill = FG_LINE)
+  #
+  
+  # has to be the last thing in this function
   canvas.pack()
   top.mainloop()
 #
-
 
 
 ###### Main Exec ######
