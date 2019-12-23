@@ -6,6 +6,7 @@ from random import random
 
 
 ###### Constants ######
+TITLE = "Conway's Game of Life"
 CELL_SIZE = 25
 WIDTH = 800
 HEIGHT = int(WIDTH * 9 / 16)
@@ -17,19 +18,18 @@ FG_CELL = 'red'
 
 
 ###### Main Method ######
-def main():
-  # Simple Print
-  print("Conway's Game of Life is starting... now.")
-  
+def main():  
   # see https://www.tutorialspoint.com/python3/tk_canvas.htm
   top = tk.Tk()
+  top.title(TITLE)
   canvas = tk.Canvas(top, bg = BG_COLOR, width = WIDTH, height = HEIGHT)
   
   drawGridLines(canvas)
   matrix = createMatrix()
   fillMatrixRandomly(matrix)
   drawMatrix(canvas, matrix)
-  printMatrix(matrix)
+  
+  repeatedlyUpdateRandomly(top, canvas, matrix, 500)
   
   # has to be the last thing in this function
   canvas.pack()
@@ -60,6 +60,15 @@ def fillMatrixRandomly(matrix):
       matrix[row][col] = (random() < 0.5)
     #
   #
+#
+
+def repeatedlyUpdateRandomly(top, canvas, matrix, intervalMs):
+  def innerUpdate():
+    fillMatrixRandomly(matrix)
+    drawMatrix(canvas, matrix)
+    top.after(intervalMs, innerUpdate)
+  #
+  top.after(intervalMs, innerUpdate)
 #
 
 def drawMatrix(canvas, matrix):
