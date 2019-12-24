@@ -22,6 +22,8 @@ CONWAY_BORN_MAX = 3
 BG_COLOR = 'blue'
 FG_LINE = 'white'
 FG_CELL = 'red'
+BUTTON_TEXT_PAUSE = 'Pause'
+BUTTON_TEXT_PLAY = 'Play'
 
 
 ###### Variables ######
@@ -32,6 +34,7 @@ class VariableState(object): pass
 def main():
   state = VariableState()
   state.generation_count = 0
+  state.is_playing = True
   
   # see https://www.tutorialspoint.com/python3/tk_canvas.htm
   state.root = tk.Tk()
@@ -45,9 +48,12 @@ def main():
   
   # see https://effbot.org/tkinterbook/button.htm
   def button_pause__click():
-    print('pause clicked!')
+    state.is_playing = not state.is_playing
+    button_text = BUTTON_TEXT_PAUSE if state.is_playing else BUTTON_TEXT_PLAY
+    state.button_pause.config(text = button_text)
   #
-  state.button_pause = tk.Button(state.root, text = 'Pause', command = button_pause__click)
+  state.button_pause = tk.Button(state.root, command = button_pause__click)
+  button_pause__click()
   
   # see https://effbot.org/tkinterbook/grid.htm
   state.canvas.grid(row = 0, column = 0, columnspan = 2, sticky = N+S+E+W)
@@ -117,7 +123,9 @@ def updateMatrixOnceDbuf(state, updateFn):
 
 def repeatedlyUpdateMatrixDbuf(state, updateFn):
   def innerUpdate():
-    updateMatrixOnceDbuf(state, updateFn)
+    if state.is_playing:
+      updateMatrixOnceDbuf(state, updateFn)
+    #
     state.root.after(MATRIX_UPDATE_MS, innerUpdate)
   #
   state.root.after(MATRIX_UPDATE_MS, innerUpdate)
