@@ -19,9 +19,9 @@ CONWAY_LIVE_MIN = 2
 CONWAY_LIVE_MAX = 3
 CONWAY_BORN_MIN = 3
 CONWAY_BORN_MAX = 3
-BG_COLOR = 'blue'
-FG_LINE = 'white'
-FG_CELL = 'red'
+BG_COLOR = '#afdfff'
+FG_LINE = '#af3faf'
+FG_CELL = '#000000'
 BUTTON_TEXT_PAUSE = 'Pause'
 BUTTON_TEXT_PLAY = 'Play'
 
@@ -52,7 +52,6 @@ def main():
     #
     state.matrices[0][row][col] = not state.matrices[0][row][col]
     drawCell(state, row, col)
-    print('x=%s col=%s ; y=%s row=%s' % (event.x, col, event.y, row))
   #
   state.canvas.bind("<Button-1>", canvas__mousepress)
   
