@@ -2,6 +2,7 @@
 
 ###### Imports ######
 import tkinter as tk
+from tkinter import N, S, E, W
 from random import random
 from collections import deque
 
@@ -24,54 +25,73 @@ FG_CELL = 'red'
 
 
 ###### Variables ######
-GENERATION_COUNT = 0
+class VariableState(object): pass
 
 
 ###### Main Method ######
-def main():  
+def main():
+  state = VariableState()
+  state.generation_count = 0
+  
   # see https://www.tutorialspoint.com/python3/tk_canvas.htm
-  top = tk.Tk()
-  top.title(TITLE)
-  canvas = tk.Canvas(top, bg = BG_COLOR, width = WIDTH, height = HEIGHT)
-  canvas.pack()
-  canvas_cells = createMatrix()
-  drawGridLines(canvas)
+  state.root = tk.Tk()
+  state.root.title(TITLE)
+  state.canvas = tk.Canvas(state.root, bg = BG_COLOR, width = WIDTH, height = HEIGHT)
+  state.canvas_cells = createMatrix()
+  drawGridLines(state.canvas)
+  
+  # labels
+  state.label_gen = tk.Label(state.root, text = 'label')
+  
+  # see https://effbot.org/tkinterbook/button.htm
+  def button_pause__click():
+    print('pause clicked!')
+  #
+  state.button_pause = tk.Button(state.root, text = 'Pause', command = button_pause__click)
+  
+  # see https://effbot.org/tkinterbook/grid.htm
+  state.canvas.grid(row = 0, column = 0, columnspan = 2, sticky = N+S+E+W)
+  state.button_pause.grid(row = 1, column = 0, sticky = N+S+E+W)
+  state.label_gen.grid(row = 1, column = 1, sticky = E)
   
   # see https://stackoverflow.com/a/9457884
-  matrices = deque([createMatrix(), createMatrix()])
+  state.matrices = deque([createMatrix(), createMatrix()])
   
   # see https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)
-  matrices[0][1+5][2] = True
-  matrices[0][2+5][3] = True
-  matrices[0][3+5][1] = True
-  matrices[0][3+5][2] = True
-  matrices[0][3+5][3] = True
-  drawMatrix(top, canvas, canvas_cells, matrices[0])
+  state.matrices[0][1+5][2] = True
+  state.matrices[0][2+5][3] = True
+  state.matrices[0][3+5][1] = True
+  state.matrices[0][3+5][2] = True
+  state.matrices[0][3+5][3] = True
   
-  repeatedlyUpdateMatrixDbuf(top, canvas, canvas_cells, matrices, updateMatrixConway)
+  drawMatrix(state)
+  repeatedlyUpdateMatrixDbuf(state, updateMatrixConway)
   
   # has to be the last thing in this function
-  center_window(top)
-  top.mainloop()
+  center_window(state.root)
+  state.root.mainloop()
 #
 
 
 ###### Helper Functions ######
-def center_window(top):
+def center_window(root):
   # https://stackoverflow.com/a/10018670
-  width_screen = top.winfo_screenwidth()
-  height_screen = top.winfo_screenheight()
-  top.geometry('{}x{}+{}+{}'.format(WIDTH, HEIGHT, (width_screen - WIDTH) // 2, (height_screen - HEIGHT) // 2))
-  top.wait_visibility()
-  width = top.winfo_width()
-  frm_width = top.winfo_rootx() - top.winfo_x()
+  width_screen = root.winfo_screenwidth()
+  height_screen = root.winfo_screenheight()
+  root.geometry('+{}+{}'.format(
+    (width_screen - WIDTH) // 2,
+    (height_screen - HEIGHT) // 2
+  ))
+  root.wait_visibility()
+  width = root.winfo_width()
+  frm_width = root.winfo_rootx() - root.winfo_x()
   win_width = width + 2 * frm_width
-  height = top.winfo_height()
-  titlebar_height = top.winfo_rooty() - top.winfo_y()
+  height = root.winfo_height()
+  titlebar_height = root.winfo_rooty() - root.winfo_y()
   win_height = height + titlebar_height + frm_width
   x = (width_screen - win_width) // 2
   y = (height_screen - win_height) // 2
-  top.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+  root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
 #
 
 def drawGridLines(canvas):
@@ -89,42 +109,41 @@ def createMatrix():
   return [[False] * COLS for r in range(ROWS)]
 #
 
-def updateMatrixOnceDbuf(top, canvas, canvas_cells, matrices, updateFn):
-  global GENERATION_COUNT
-  GENERATION_COUNT += 1
-  updateFn(matrices)
-  drawMatrix(top, canvas, canvas_cells, matrices[0])
+def updateMatrixOnceDbuf(state, updateFn):
+  state.generation_count += 1
+  updateFn(state)
+  drawMatrix(state)
 #
 
-def repeatedlyUpdateMatrixDbuf(top, canvas, canvas_cells, matrices, updateFn):
+def repeatedlyUpdateMatrixDbuf(state, updateFn):
   def innerUpdate():
-    updateMatrixOnceDbuf(top, canvas, canvas_cells, matrices, updateFn)
-    top.after(MATRIX_UPDATE_MS, innerUpdate)
+    updateMatrixOnceDbuf(state, updateFn)
+    state.root.after(MATRIX_UPDATE_MS, innerUpdate)
   #
-  top.after(MATRIX_UPDATE_MS, innerUpdate)
+  state.root.after(MATRIX_UPDATE_MS, innerUpdate)
 #
 
-def drawMatrix(top, canvas, canvas_cells, matrix):
+def drawMatrix(state):
   # see https://stackoverflow.com/a/12991740
-  create = canvas_cells[0][0] == False
-  top.title('{} g={}'.format(TITLE, GENERATION_COUNT))
+  create = state.canvas_cells[0][0] == False
+  state.label_gen.config(text = 'g=%s' % (state.generation_count))
   for row in range(ROWS):
     for col in range(COLS):
-      cell_value = matrix[row][col]
+      cell_value = state.matrices[0][row][col]
       if create:
         x0 = col * CELL_SIZE + 1; x1 = x0 + CELL_SIZE - 1
         y0 = row * CELL_SIZE + 1; y1 = y0 + CELL_SIZE - 1
-        canvas_cells[row][col] = canvas.create_polygon(x0, y0, x0, y1, x1, y1, x1, y0)
+        state.canvas_cells[row][col] = state.canvas.create_polygon(x0, y0, x0, y1, x1, y1, x1, y0)
       #
-      cell = canvas_cells[row][col]
+      cell = state.canvas_cells[row][col]
       cell_fill = FG_CELL if cell_value else BG_COLOR
-      canvas.itemconfig(cell, fill = cell_fill)
+      state.canvas.itemconfig(cell, fill = cell_fill)
     #
   #
 #
 
 def printMatrix(matrix):
-  print('g={}'.format(GENERATION_COUNT))
+  print('g={}'.format(Vars.GENERATION_COUNT))
   for row in range(ROWS):
     for col in range(COLS):
       cell_value = matrix[row][col]
@@ -135,11 +154,13 @@ def printMatrix(matrix):
   #
 #
 
-def fillMatrixRandomly(matrices):
+
+###### Update Functions ######
+def updateMatrixRandomly(state):
   for col in range(COLS):
     for row in range(ROWS):
       # see https://stackoverflow.com/a/6824868
-      matrices[0][row][col] = (random() < 0.5)
+      state.matrices[0][row][col] = (random() < 0.5)
     #
   #
 #
@@ -148,9 +169,9 @@ NEIGHBOR_CELL_DIFFS = [
   (-1, -1), ( 0, -1), (+1, -1), (+1,  0),
   (+1, +1), ( 0, +1), (-1, +1), (-1,  0)
 ]
-def updateMatrixConway(matrices):
-  original_matrix = matrices[0]
-  updated_matrix = matrices[1]
+def updateMatrixConway(state):
+  original_matrix = state.matrices[0]
+  updated_matrix = state.matrices[1]
   for row in range(ROWS):
     for col in range(COLS):
       live_neighbor_count = 0
@@ -169,7 +190,7 @@ def updateMatrixConway(matrices):
       #
     #
   #
-  matrices.rotate(1)
+  state.matrices.rotate(1)
 #
 
 
