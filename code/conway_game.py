@@ -34,20 +34,21 @@ def main():
   top.title(TITLE)
   canvas = tk.Canvas(top, bg = BG_COLOR, width = WIDTH, height = HEIGHT)
   canvas.pack()
+  canvas_cells = createMatrix()
   drawGridLines(canvas)
   
   # see https://stackoverflow.com/a/9457884
   matrices = deque([createMatrix(), createMatrix()])
   
   # see https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)
-  matrices[0][1][2] = True
-  matrices[0][2][3] = True
-  matrices[0][3][1] = True
-  matrices[0][3][2] = True
-  matrices[0][3][3] = True
-  drawMatrix(top, canvas, matrices[0])
+  matrices[0][1+5][2] = True
+  matrices[0][2+5][3] = True
+  matrices[0][3+5][1] = True
+  matrices[0][3+5][2] = True
+  matrices[0][3+5][3] = True
+  drawMatrix(top, canvas, canvas_cells, matrices[0])
   
-  repeatedlyUpdateMatrixDbuf(top, canvas, matrices, updateMatrixConway)
+  repeatedlyUpdateMatrixDbuf(top, canvas, canvas_cells, matrices, updateMatrixConway)
   
   # has to be the last thing in this function
   center_window(top)
@@ -88,30 +89,36 @@ def createMatrix():
   return [[False] * COLS for r in range(ROWS)]
 #
 
-def updateMatrixOnceDbuf(top, canvas, matrices, updateFn):
+def updateMatrixOnceDbuf(top, canvas, canvas_cells, matrices, updateFn):
   global GENERATION_COUNT
   GENERATION_COUNT += 1
   updateFn(matrices)
-  drawMatrix(top, canvas, matrices[0])
+  drawMatrix(top, canvas, canvas_cells, matrices[0])
 #
 
-def repeatedlyUpdateMatrixDbuf(top, canvas, matrices, updateFn):
+def repeatedlyUpdateMatrixDbuf(top, canvas, canvas_cells, matrices, updateFn):
   def innerUpdate():
-    updateMatrixOnceDbuf(top, canvas, matrices, updateFn)
+    updateMatrixOnceDbuf(top, canvas, canvas_cells, matrices, updateFn)
     top.after(MATRIX_UPDATE_MS, innerUpdate)
   #
   top.after(MATRIX_UPDATE_MS, innerUpdate)
 #
 
-def drawMatrix(top, canvas, matrix):
+def drawMatrix(top, canvas, canvas_cells, matrix):
+  # see https://stackoverflow.com/a/12991740
+  create = canvas_cells[0][0] == False
   top.title('{} g={}'.format(TITLE, GENERATION_COUNT))
   for row in range(ROWS):
     for col in range(COLS):
       cell_value = matrix[row][col]
-      x0 = col * CELL_SIZE + 1; x1 = x0 + CELL_SIZE - 1
-      y0 = row * CELL_SIZE + 1; y1 = y0 + CELL_SIZE - 1
+      if create:
+        x0 = col * CELL_SIZE + 1; x1 = x0 + CELL_SIZE - 1
+        y0 = row * CELL_SIZE + 1; y1 = y0 + CELL_SIZE - 1
+        canvas_cells[row][col] = canvas.create_polygon(x0, y0, x0, y1, x1, y1, x1, y0)
+      #
+      cell = canvas_cells[row][col]
       cell_fill = FG_CELL if cell_value else BG_COLOR
-      canvas.create_polygon(x0, y0, x0, y1, x1, y1, x1, y0, fill = cell_fill)
+      canvas.itemconfig(cell, fill = cell_fill)
     #
   #
 #
