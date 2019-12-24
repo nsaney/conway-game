@@ -43,6 +43,19 @@ def main():
   state.canvas_cells = createMatrix()
   drawGridLines(state.canvas)
   
+  # see https://stackoverflow.com/a/29211864
+  def canvas__mousepress(event):
+    col = event.x // CELL_SIZE
+    row = event.y // CELL_SIZE
+    if col >= COLS or row >= ROWS:
+      return
+    #
+    state.matrices[0][row][col] = not state.matrices[0][row][col]
+    drawCell(state, row, col)
+    print('x=%s col=%s ; y=%s row=%s' % (event.x, col, event.y, row))
+  #
+  state.canvas.bind("<Button-1>", canvas__mousepress)
+  
   # labels
   state.label_gen = tk.Label(state.root, text = 'label')
   
@@ -63,18 +76,12 @@ def main():
   # see https://stackoverflow.com/a/9457884
   state.matrices = deque([createMatrix(), createMatrix()])
   
-  # see https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)
-  state.matrices[0][1+5][2] = True
-  state.matrices[0][2+5][3] = True
-  state.matrices[0][3+5][1] = True
-  state.matrices[0][3+5][2] = True
-  state.matrices[0][3+5][3] = True
-  
+  # initialize and start update loop
+  center_window(state.root)
   drawMatrix(state)
   repeatedlyUpdateMatrixDbuf(state, updateMatrixConway)
   
   # has to be the last thing in this function
-  center_window(state.root)
   state.root.mainloop()
 #
 
@@ -131,21 +138,25 @@ def repeatedlyUpdateMatrixDbuf(state, updateFn):
   state.root.after(MATRIX_UPDATE_MS, innerUpdate)
 #
 
+def drawCell(state, row, col):
+  create = state.canvas_cells[row][col] == False
+  cell_value = state.matrices[0][row][col]
+  if create:
+    x0 = col * CELL_SIZE + 1; x1 = x0 + CELL_SIZE - 1
+    y0 = row * CELL_SIZE + 1; y1 = y0 + CELL_SIZE - 1
+    state.canvas_cells[row][col] = state.canvas.create_polygon(x0, y0, x0, y1, x1, y1, x1, y0)
+  #
+  cell = state.canvas_cells[row][col]
+  cell_fill = FG_CELL if cell_value else BG_COLOR
+  state.canvas.itemconfig(cell, fill = cell_fill)
+#
+
 def drawMatrix(state):
   # see https://stackoverflow.com/a/12991740
-  create = state.canvas_cells[0][0] == False
   state.label_gen.config(text = 'g=%s' % (state.generation_count))
   for row in range(ROWS):
     for col in range(COLS):
-      cell_value = state.matrices[0][row][col]
-      if create:
-        x0 = col * CELL_SIZE + 1; x1 = x0 + CELL_SIZE - 1
-        y0 = row * CELL_SIZE + 1; y1 = y0 + CELL_SIZE - 1
-        state.canvas_cells[row][col] = state.canvas.create_polygon(x0, y0, x0, y1, x1, y1, x1, y0)
-      #
-      cell = state.canvas_cells[row][col]
-      cell_fill = FG_CELL if cell_value else BG_COLOR
-      state.canvas.itemconfig(cell, fill = cell_fill)
+      drawCell(state, row, col)
     #
   #
 #
