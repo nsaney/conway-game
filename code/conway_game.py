@@ -10,8 +10,8 @@ from collections import deque
 ###### Constants ######
 TITLE = "Conway's Game of Life"
 CELL_SIZE = 25
-WIDTH = 800
-HEIGHT = WIDTH
+WIDTH = CELL_SIZE * 16 * 3
+HEIGHT = int(WIDTH * 9 / 16)
 COLS = int(WIDTH / CELL_SIZE)
 ROWS = int(HEIGHT / CELL_SIZE)
 MATRIX_UPDATE_MS = 100
@@ -24,6 +24,7 @@ FG_LINE = '#af3faf'
 FG_CELL = '#000000'
 BUTTON_TEXT_PAUSE = 'Pause'
 BUTTON_TEXT_PLAY = 'Play'
+BUTTON_TEXT_CLEAR = 'Clear'
 
 
 ###### Variables ######
@@ -43,17 +44,24 @@ def main():
   state.canvas_cells = createMatrix()
   drawGridLines(state.canvas)
   
-  # see https://stackoverflow.com/a/29211864
-  def canvas__mousepress(event):
-    col = event.x // CELL_SIZE
-    row = event.y // CELL_SIZE
-    if col >= COLS or row >= ROWS:
-      return
-    #
-    state.matrices[0][row][col] = not state.matrices[0][row][col]
-    drawCell(state, row, col)
+  # see https://effbot.org/tkinterbook/tkinter-events-and-bindings.htm
+  def canvas__mousedown(event):
+    state.mouse_is_down = True
+    updateCanvasWithMouse(event, state)
   #
-  state.canvas.bind("<Button-1>", canvas__mousepress)
+  def canvas__mousedrag(event):
+    updateCanvasWithMouse(event, state)
+  #
+  def canvas__mouseup(event):
+    state.mouse_is_down = False
+    state.mouse_down_set = None
+    state.mouse_down_col = None
+    state.mouse_down_row = None
+  #
+  state.canvas.bind("<Button-1>", canvas__mousedown)
+  state.canvas.bind("<B1-Motion>", canvas__mousedrag)
+  state.canvas.bind("<ButtonRelease-1>", canvas__mouseup)
+  canvas__mouseup(None)
   
   # labels
   state.label_gen = tk.Label(state.root, text = 'label')
@@ -67,10 +75,16 @@ def main():
   state.button_pause = tk.Button(state.root, command = button_pause__click)
   button_pause__click()
   
+  def button_clear__click():
+    clearMatrix(state)
+  #
+  state.button_clear = tk.Button(state.root, command = button_clear__click, text = BUTTON_TEXT_CLEAR)
+  
   # see https://effbot.org/tkinterbook/grid.htm
-  state.canvas.grid(row = 0, column = 0, columnspan = 2, sticky = N+S+E+W)
+  state.canvas.grid(row = 0, column = 0, columnspan = 3, sticky = N+S+E+W)
   state.button_pause.grid(row = 1, column = 0, sticky = N+S+E+W)
-  state.label_gen.grid(row = 1, column = 1, sticky = E)
+  state.button_clear.grid(row = 1, column = 1, sticky = N+S+E+W)
+  state.label_gen.grid(row = 1, column = 2, sticky = E)
   
   # see https://stackoverflow.com/a/9457884
   state.matrices = deque([createMatrix(), createMatrix()])
@@ -104,6 +118,28 @@ def center_window(root):
   x = (width_screen - win_width) // 2
   y = (height_screen - win_height) // 2
   root.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+#
+
+# see https://stackoverflow.com/a/29211864
+def updateCanvasWithMouse(event, state):
+  if not state.mouse_is_down:
+    return
+  #
+  col = event.x // CELL_SIZE
+  row = event.y // CELL_SIZE
+  if col >= COLS or row >= ROWS:
+    return
+  #
+  if state.mouse_down_col == col and state.mouse_down_row == row:
+    return
+  #
+  state.mouse_down_col = col
+  state.mouse_down_row = row
+  if state.mouse_down_set == None:
+    state.mouse_down_set = not state.matrices[0][row][col]
+  #
+  state.matrices[0][row][col] = state.mouse_down_set
+  drawCell(state, row, col)
 #
 
 def drawGridLines(canvas):
@@ -174,6 +210,15 @@ def printMatrix(matrix):
 
 
 ###### Update Functions ######
+def clearMatrix(state):
+  for col in range(COLS):
+    for row in range(ROWS):
+      state.matrices[0][row][col] = False
+      drawCell(state, row, col)
+    #
+  #
+#
+
 def updateMatrixRandomly(state):
   for col in range(COLS):
     for row in range(ROWS):
